@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Far Cry 4
+Comment=Play Far Cry 4
+Exec=/home/dipu/Games/Far-Cry-4/play-farcry4.sh
+Path=/home/dipu/Games/Far-Cry-4/bin
+Icon=/home/dipu/Games/Far-Cry-4/bin/farcry4.png
+Terminal=false
+Categories=Game;
+StartupNotify=true
