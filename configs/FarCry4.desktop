@@ -1,11 +1,16 @@
+# =============================================================
+#  Far Cry 4 — Desktop Launcher (Template)
+#  ⚠️  Replace YOUR_USERNAME with your actual Linux username,
+#      OR run install.sh to generate this file automatically.
+# =============================================================
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=Far Cry 4
-Comment=Play Far Cry 4
-Exec=/home/dipu/Games/Far-Cry-4/play-farcry4.sh
-Path=/home/dipu/Games/Far-Cry-4/bin
-Icon=/home/dipu/Games/Far-Cry-4/bin/farcry4.png
+Comment=Play Far Cry 4 on Ubuntu Linux via Wine + DXVK
+Exec=/home/YOUR_USERNAME/Games/Far-Cry-4/play-farcry4.sh
+Path=/home/YOUR_USERNAME/Games/Far-Cry-4/bin
+Icon=/home/YOUR_USERNAME/Games/Far-Cry-4/bin/farcry4.png
 Terminal=false
 Categories=Game;
 StartupNotify=true

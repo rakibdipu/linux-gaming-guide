@@ -123,16 +123,18 @@ sudo apt update && sudo apt install -y \
 DXVK ডিরেক্টএক্স ৯, ১০ এবং ১১ কলগুলোকে আধুনিক ভালকানে কনভার্ট করে এফপিএস দ্বিগুণ করে দেয়:
 
 ```bash
-# ১. লেটেস্ট রিলিজ ডাউনলোড
-wget https://github.com/doitsujin/dxvk/releases/download/v2.4/dxvk-2.4.tar.gz
-tar -xzf dxvk-2.4.tar.gz
+# ১. লেটেস্ট DXVK রিলিজ ডাউনলোড
+#    সর্বশেষ ভার্সন চেক করুন: https://github.com/doitsujin/dxvk/releases
+DXVK_VER="2.4.1"
+wget "https://github.com/doitsujin/dxvk/releases/download/v${DXVK_VER}/dxvk-${DXVK_VER}.tar.gz"
+tar -xzf "dxvk-${DXVK_VER}.tar.gz"
 
 # ২. Wine সিস্টেম ডিরেক্টরিতে 64-bit DLL গুলো কপি
 mkdir -p ~/.wine/drive_c/windows/system32
-cp dxvk-2.4/x64/*.dll ~/.wine/drive_c/windows/system32/
+cp "dxvk-${DXVK_VER}/x64/"*.dll ~/.wine/drive_c/windows/system32/
 
 # ৩. গেমের নিজস্ব bin ফোল্ডারে কপি (গেম যেন সরাসরি লোড করে)
-cp dxvk-2.4/x64/*.dll /home/$USER/Games/Far-Cry-4/bin/
+cp "dxvk-${DXVK_VER}/x64/"*.dll ~/Games/Far-Cry-4/bin/
 ```
 
 ---
@@ -407,23 +409,11 @@ Wine দিয়ে গেম খেললে ব্লুটুথ হেডফ�
 git clone https://github.com/rakibdipu/linux-gaming-guide.git
 cd linux-gaming-guide
 
-# ২. ডিপেন্ডেন্সি ইনস্টল করুন
-sudo apt update && sudo apt install -y wine wine64 winetricks lutris gamemode python3-evdev
-
-# ৩. Udev রুল বসান
-sudo cp configs/99-game-input.rules /etc/udev/rules.d/
-sudo udevadm control --reload-rules && sudo udevadm trigger
-
-# ৪. ওয়াইন রেজিস্ট্রি টুইক প্রয়োগ করুন
-wine reg add 'HKEY_CURRENT_USER\Software\Wine\DllOverrides' /v d3d11 /t REG_SZ /d 'native,builtin' /f
-wine reg add 'HKEY_CURRENT_USER\Software\Wine\DllOverrides' /v dxgi /t REG_SZ /d 'native,builtin' /f
-wine reg add 'HKEY_CURRENT_USER\Software\Wine\X11 Driver' /v UseTakeFocus /t REG_SZ /d 'N' /f
-wine reg add 'HKEY_CURRENT_USER\Software\Wine\X11 Driver' /v GrabPointer /t REG_SZ /d 'Y' /f
-
-# ৫. স্ক্রিপ্ট রান করুন
-chmod +x scripts/*.sh scripts/*.py
-./scripts/play-farcry4.sh
+# ২. অটো-ইনস্টলার চালান (সব কিছু একসাথে সেটআপ হয়ে যাবে)
+bash install.sh
 ```
+
+> **Note:** `install.sh` স্বয়ংক্রিয়ভাবে সব ডিপেন্ডেন্সি ইনস্টল, udev রুল, Wine রেজিস্ট্রি টুইক এবং আপনার ইউজারনেম দিয়ে ডেক্সটপ শর্টকাট তৈরি করে দেবে।
 
 ---
 
