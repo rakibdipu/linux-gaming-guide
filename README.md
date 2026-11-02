@@ -10,100 +10,106 @@
 
 A comprehensive, field-tested guide and turnkey setup for running Windows games (pre-installed, portable, repacks, and standalone) smoothly on **Ubuntu Linux** without relying on Steam client UI overhead. 
 
-This repository documents the exact fixes for **DirectX-to-Vulkan translation (DXVK)**, **PipeWire Bluetooth audio latency sync**, **AMD Radeon iGPU graphic glitch fixes (Far Cry 4 tree spike glitch)**, **Wine key-stuck/auto-run bugs**, and a **custom low-level 1-tap auto-heal keyboard macro via `evdev` & `uinput`** running without `sudo`.
+This repository documents production-ready fixes for:
+- **DirectX-to-Vulkan Translation (DXVK)** for near-native frame rates.
+- **PipeWire & Bluetooth Audio Sync** (eliminates the ~200ms audio delay and volume spikes).
+- **AMD Radeon iGPU Graphic Glitch Fixes** (resolves Far Cry 4 Dunia engine tree-spike and stretched polygon bugs).
+- **Wine Key-Stuck / Focus Bug Fixes** (prevents character auto-running/walking infinitely).
+- **Non-Root 1-Tap Auto-Heal Macro** built on the Linux kernel input subsystem (`evdev` & `uinput`).
+- **Turnkey Automation (`install.sh`)** for instant, one-click setup across any user profile.
 
 ---
 
-## 📑 Table of Contents (সূচিপত্র)
+## 📑 Table of Contents
 
 - [📌 System Specification (Reference Testbed)](#-system-specification-reference-testbed)
-- [🗺️ কোন টাইপের গেম কিসে চালাবেন? (Gaming Decision Matrix)](#️-কোন-টাইপের-গেম-কিসে-চালাবেন-gaming-decision-matrix)
-- [📂 ফাইল ও ডিরেক্টরি আর্কিটেকচার (File Locations)](#-ফাইল-ও-ডিরেক্টরি-আর্কিটেকচার-file-locations)
-- [🛠️ প্রয়োজনীয় প্যাকেজ ও টুলস ইনস্টলেশন (Prerequisites)](#️-প্রয়োজনীয়-প্যাকেজ-ও-টুলস-ইনস্টলেশন-prerequisites)
-- [🚀 বিস্তারিত কনফিগারেশন ও স্ক্রিপ্টসমূহ (Detailed Setup)](#-বিস্তারিত-কনফিগারেশন-ও-স্ক্রিপ্টসমূহ-detailed-setup)
-  - [১. কাস্টম গেম রানার স্ক্রিপ্ট (`play-farcry4.sh`)](#১-কাস্টম-গেম-রানার-স্ক্রিপ্ট-play-farcry4sh)
-  - [২. গ্রাফিক্স ও ট্রি-স্পাইক গ্লিচ ফিক্স (`GamerProfile.xml`)](#২-গ্রাফিক্স-ও-ট্রি-স্পাইক-গ্লিচ-ফিক্স-gamerprofilexml)
-  - [৩. ১-ট্যাপ অটো-হিল ম্যাক্রো স্ক্রিপ্ট (`auto_heal.py`)](#৩-১-ট্যাপ-অটো-হিল-ম্যাক্রো-স্ক্রিপ্ট-auto_healpy)
-  - [৪. রুট ছাড়া ইনপুট পারমিশন রুল (`99-game-input.rules`)](#৪-রুট-ছাড়া-ইনপুট-পারমিশন-রুল-99-game-inputrules)
-  - [৫. ডেক্সটপ এন্ট্রি ও ১-ক্লিক লঞ্চার (`FarCry4.desktop`)](#৫-ডেক্সটপ-এন্ট্রি-ও-১-ক্লিক-লঞ্চার-farcry4desktop)
-  - [৬. ওয়াইন রেজিস্ট্রি অপ্টিমাইজেশন (Wine Key-Stuck & DLL Overrides)](#৬-ওয়াইন-রেজিস্ট্রি-অপ্টিমাইজেশন-wine-key-stuck--dll-overrides)
-  - [৭. ব্লুটুথ ও পাইপওয়্যারে অডিও ল্যাটেন্সি ফিক্স (PipeWire Low Latency)](#৭-ব্লুটুথ-ও-পাইপওয়্যারে-অডিও-ল্যাটেন্সি-ফিক্স-pipewire-low-latency)
-- [⚡ Quick Start Guide (এক নজরে ফুল সেটআপ)](#-quick-start-guide-এক-নজরে-ফুল-সেটআপ)
-- [❓ সাধারণ সমস্যা ও সমাধান (Troubleshooting & FAQ)](#-সাধারণ-সমস্যা-ও-সমাধান-troubleshooting--faq)
-- [📄 লাইসেন্স (License)](#-লাইসেন্স-license)
+- [🗺️ Gaming Decision Matrix (Which Runner to Use?)](#️-gaming-decision-matrix-which-runner-to-use)
+- [📂 Directory & File Architecture](#-directory--file-architecture)
+- [🛠️ Prerequisites & Package Installation](#️-prerequisites--package-installation)
+- [🚀 Detailed Configuration & Implementation](#-detailed-configuration--implementation)
+  - [1. Custom Game Runner Script (`play-farcry4.sh`)](#1-custom-game-runner-script-play-farcry4sh)
+  - [2. Graphics Glitch & Tree-Spike Fix (`GamerProfile.xml`)](#2-graphics-glitch--tree-spike-fix-gamerprofilexml)
+  - [3. 1-Tap Auto-Heal Keyboard Macro (`auto_heal.py`)](#3-1-tap-auto-heal-keyboard-macro-auto_healpy)
+  - [4. Non-Root Input Permission Rule (`99-game-input.rules`)](#4-non-root-input-permission-rule-99-game-inputrules)
+  - [5. Desktop Entry & 1-Click Launcher (`FarCry4.desktop`)](#5-desktop-entry--1-click-launcher-farcry4desktop)
+  - [6. Wine Registry Optimization (Key-Stuck & DLL Overrides)](#6-wine-registry-optimization-key-stuck--dll-overrides)
+  - [7. PipeWire Low-Latency Bluetooth Audio Tuning](#7-pipewire-low-latency-bluetooth-audio-tuning)
+- [⚡ Quick Start Guide](#-quick-start-guide)
+- [❓ Frequently Asked Questions (Troubleshooting & FAQ)](#-frequently-asked-questions-troubleshooting--faq)
+- [📄 License](#-license)
 
 ---
 
 ## 📌 System Specification (Reference Testbed)
 
-এই সেটআপটি নিচের হার্ডওয়্যার ও অপারেটিং সিস্টেমে পরীক্ষিত এবং ১০০% কার্যকর:
+This configuration has been thoroughly benchmarked and verified on the following hardware and software environment:
 
 | Component | Specification |
 | :--- | :--- |
-| **OS** | Ubuntu 24.04 / 26.04 LTS (x86_64, Linux 6.8+ kernel) |
+| **OS** | Ubuntu 24.04 / 26.04 LTS (x86_64, Linux Kernel 6.8+) |
 | **CPU** | AMD Ryzen 5 7530U (6 Cores, 12 Threads, up to 4.5 GHz) |
 | **iGPU** | AMD Radeon Graphics (Barcelo / Vega 7 Architecture) |
-| **Mesa Driver** | Mesa 24.x+ (RADV Vulkan driver with GPL support) |
+| **Mesa Driver** | Mesa 24.x+ (RADV Vulkan driver with GPL support enabled) |
 | **Wine Version** | Wine 9.0 / 10.0 (Staging / Development) 64-bit |
 | **Vulkan Layer** | DXVK 2.x / 3.x (Direct3D 9/10/11 translation) |
 | **Audio Server** | PipeWire 1.0+ with WirePlumber (Bluetooth AVRCP / A2DP) |
-| **Input Subsystem** | Linux `evdev` + `uinput` with non-root uaccess rules |
+| **Input Subsystem** | Linux `evdev` + `uinput` with non-root `uaccess` rules |
 
 ---
 
-## 🗺️ কোন টাইপের গেম কিসে চালাবেন? (Gaming Decision Matrix)
+## 🗺️ Gaming Decision Matrix (Which Runner to Use?)
 
-লিনাক্সে গেম খেলার সময় সঠিক টুল নির্বাচন করা সবচেয়ে জরুরি:
+Selecting the appropriate runtime environment is critical for seamless Linux gaming:
 
-| গেমের ধরন (Game Type) | সেরা রানার (Best Tool) | কেন ব্যবহার করবেন? (Reason) |
+| Game Type | Recommended Runner | Why Use It? |
 | :--- | :--- | :--- |
-| **Steam এর নিজস্ব গেম** | **Steam + Proton / Proton Experimental** | অটোমেটিক শেডার ক্যাশ ডাউনলোড ও ভালভ-এর প্রোটন দিয়ে কোনো ঝামেলা ছাড়াই সরাসরি রান হয়। |
-| **Epic Games / GOG / Amazon Games** | **Heroic Games Launcher** | ক্লাউড সেভ সিঙ্ক সাপোর্ট করে, সম্পূর্ণ ওপেন সোর্স এবং সহজে Proton-GE নির্বাচন করা যায়। |
-| **পোর্টেবল / ক্র্যাকড / প্রি-ইনস্টল্ড ফোল্ডার গেম** | **Wine 10 + DXVK (Custom Runner Script) / Lutris** | লঞ্চার অ্যাপের ব্যাকগ্রাউন্ড সিপিইউ/র‍্যাম ওভারহেড ছাড়া সরাসরি নেটিভ স্পিডে চলে। |
-| **মাল্টিপ্লেয়ার গেম (Kernel Anti-Cheat)** | **লিনাক্সে খেলা সম্ভব নয় (Unless Native)** | Valorant (Vanguard), COD Warzone (Ricochet), Fortnite (EAC/BattlEye) লিনাক্স কার্নেল ব্লক করে। |
+| **Steam Native Games** | **Steam + Proton / Proton Experimental** | Automatic shader pre-caching and 1-click execution backed by Valve's Proton compatibility layer. |
+| **Epic Games / GOG / Amazon Prime** | **Heroic Games Launcher** | Open-source client supporting cloud saves, clean Wine prefix isolation, and direct Proton-GE switching. |
+| **Portable / Pre-Installed / Repacks** | **Wine 10 + DXVK (Custom Script) / Lutris** | Bypasses third-party launcher bloat; runs games with native performance and direct fine-grained environment controls. |
+| **Multiplayer Games with Anti-Cheat** | **Unsupported on Linux (Unless Native)** | Titles enforcing Kernel-level (Ring 0) anti-cheat (e.g., Valorant/Vanguard, Fortnite, COD Warzone, FC 24/25) will block Wine/Proton. |
 
 ---
 
-## 📂 ফাইল ও ডিরেক্টরি আর্কিটেকচার (File Locations)
+## 📂 Directory & File Architecture
 
-সিস্টেমে কোন ফাইল কোথায় থাকবে তার একটি পরিচ্ছন্ন রোডম্যাপ:
+A visual blueprint of how files and configurations are structured in the system:
 
 ```
 📁 System Root
 │
-├── 📂 /home/$USER/Games/Far-Cry-4/
-│   ├── 📜 play-farcry4.sh                    # [Executable] মূল গেম রানার স্ক্রিপ্ট
-│   ├── 📜 auto_heal.py                       # [Python] 1-ট্যাপ অটো-হিল ব্যাকগ্রাউন্ড ম্যাক্রো
+├── 📂 $HOME/Games/Far-Cry-4/
+│   ├── 📜 play-farcry4.sh                    # [Executable] Master game runner & environment manager
+│   ├── 📜 auto_heal.py                       # [Python] Non-blocking 1-tap heal macro daemon
 │   └── 📂 bin/
-│       ├── 🎮 FarCry4.exe                    # মূল গেম এক্সিকিউটেবল
-│       ├── 🖼️ farcry4.png                    # গেমের ডেক্সটপ আইকন
-│       ├── ⚙️ d3d11.dll                      # DXVK Direct3D 11 লাইব্রেরি
-│       ├── ⚙️ dxgi.dll                       # DXVK DXGI লাইব্রেরি
-│       ├── ⚙️ d3d10core.dll                  # DXVK Direct3D 10 লাইব্রেরি
-│       └── ⚙️ d3d9.dll                       # DXVK Direct3D 9 লাইব্রেরি
+│       ├── 🎮 FarCry4.exe                    # Main game binary
+│       ├── 🖼️ farcry4.png                    # Game desktop icon
+│       ├── ⚙️ d3d11.dll                      # DXVK Direct3D 11 translation DLL
+│       ├── ⚙️ dxgi.dll                       # DXVK DXGI translation DLL
+│       ├── ⚙️ d3d10core.dll                  # DXVK Direct3D 10 translation DLL
+│       └── ⚙️ d3d9.dll                       # DXVK Direct3D 9 translation DLL
 │
-├── 📂 /home/$USER/.wine/drive_c/windows/system32/
-│   └── ⚙️ [DXVK DLLs]                        # Wine গ্লোবাল DXVK ব্যাকআপ
+├── 📂 $HOME/.wine/drive_c/windows/system32/
+│   └── ⚙️ [DXVK DLLs]                        # Wine global system32 DXVK backup
 │
-├── 📂 /home/$USER/Documents/My Games/Far Cry 4/AnkerGames/
-│   └── ⚙️ GamerProfile.xml                   # গ্রাফিক্স সেটিংস ও ট্রি-স্পাইক ফিক্স কনফিগ
+├── 📂 $HOME/Documents/My Games/Far Cry 4/AnkerGames/
+│   └── ⚙️ GamerProfile.xml                   # Engine config (Tree-spike & shadow bug patch)
 │
-├── 📂 /home/$USER/Desktop/
-│   └── 🚀 FarCry4.desktop                    # ডেক্সটপ শর্টকাট আইকন
+├── 📂 $HOME/Desktop/
+│   └── 🚀 FarCry4.desktop                    # Desktop 1-click launcher
 │
-├── 📂 /home/$USER/.local/share/applications/
-│   └── 🚀 FarCry4.desktop                    # উবুন্টু অ্যাপ মেনু শর্টকাট
+├── 📂 $HOME/.local/share/applications/
+│   └── 🚀 FarCry4.desktop                    # Application drawer integration
 │
 └── 📂 /etc/udev/rules.d/
-    └── 📜 99-game-input.rules                # uinput ও কিবোর্ড ইভেন্ট নন-রুট পারমিশন রুল
+    └── 📜 99-game-input.rules                # uinput & evdev non-root permission rule
 ```
 
 ---
 
-## 🛠️ প্রয়োজনীয় প্যাকেজ ও টুলস ইনস্টলেশন (Prerequisites)
+## 🛠️ Prerequisites & Package Installation
 
-### ধাপ ১: সিস্টেম আপডেট এবং প্রয়োজনীয় ডিপেন্ডেন্সি ইনস্টল
-টার্মিনালে নিচের কমান্ডটি একবারে রান করুন:
+### Step 1: Install Core System Dependencies
+Run the following command to install the required packages:
 
 ```bash
 sudo apt update && sudo apt install -y \
@@ -119,62 +125,88 @@ sudo apt update && sudo apt install -y \
     mesa-vulkan-drivers
 ```
 
-### ধাপ ২: DXVK (Vulkan Translation Layer) ডাউনলোড ও সেটআপ
-DXVK ডিরেক্টএক্স ৯, ১০ এবং ১১ কলগুলোকে আধুনিক ভালকানে কনভার্ট করে এফপিএস দ্বিগুণ করে দেয়:
+### Step 2: Download & Setup DXVK (Vulkan Translation Layer)
+DXVK translates Direct3D 9, 10, and 11 API calls to Vulkan, dramatically boosting frame rate stability:
 
 ```bash
-# ১. লেটেস্ট DXVK রিলিজ ডাউনলোড
-#    সর্বশেষ ভার্সন চেক করুন: https://github.com/doitsujin/dxvk/releases
+# 1. Download latest DXVK release
+#    Check latest release version at: https://github.com/doitsujin/dxvk/releases
 DXVK_VER="2.4.1"
 wget "https://github.com/doitsujin/dxvk/releases/download/v${DXVK_VER}/dxvk-${DXVK_VER}.tar.gz"
 tar -xzf "dxvk-${DXVK_VER}.tar.gz"
 
-# ২. Wine সিস্টেম ডিরেক্টরিতে 64-bit DLL গুলো কপি
+# 2. Copy 64-bit DLLs to Wine system32
 mkdir -p ~/.wine/drive_c/windows/system32
 cp "dxvk-${DXVK_VER}/x64/"*.dll ~/.wine/drive_c/windows/system32/
 
-# ৩. গেমের নিজস্ব bin ফোল্ডারে কপি (গেম যেন সরাসরি লোড করে)
+# 3. Copy DLLs into the game's executable directory
 cp "dxvk-${DXVK_VER}/x64/"*.dll ~/Games/Far-Cry-4/bin/
 ```
 
 ---
 
-## 🚀 বিস্তারিত কনফিগারেশন ও স্ক্রিপ্টসমূহ (Detailed Setup)
+## 🚀 Detailed Configuration & Implementation
 
-### ১. কাস্টম গেম রানার স্ক্রিপ্ট (`play-farcry4.sh`)
-**লোকেশন:** `/home/$USER/Games/Far-Cry-4/play-farcry4.sh`  
-**কাজ:** গেম চালু করার সময় গ্রাফিক্স (DXVK), অডিও সিনক্রোনাইজেশন (PipeWire), জিপিইউ অপ্টিমাইজেশন এবং অটো-হিল ম্যাক্রো একসাথে লোড করে এবং গেম বন্ধ হলে ক্লিনআপ করে।
+### 1. Custom Game Runner Script (`play-farcry4.sh`)
+**Location:** `$HOME/Games/Far-Cry-4/play-farcry4.sh`  
+**Purpose:** Sets up environment variables, forces DXVK over WineD3D, manages PipeWire audio buffers, tunes AMD Mesa drivers, starts the background auto-heal daemon, and guarantees clean process teardown on exit.
 
 ```bash
 #!/bin/bash
-# -------------------------------------------------------------
-# Linux Game Runner Script with DXVK, Audio Sync & Evdev Macro
-# -------------------------------------------------------------
-cd /home/$USER/Games/Far-Cry-4/bin || exit 1
+# =============================================================
+#  Far Cry 4 - Linux Launcher Script
+#  Handles: DXVK (Vulkan), PipeWire audio sync,
+#           AMD Radeon optimizations, 1-tap auto-heal macro
+#
+#  Usage: ./play-farcry4.sh
+# =============================================================
 
-# ১. Wine কে ডিফল্ট WineD3D এর বদলে নেটিভ DXVK (Vulkan) ব্যবহার করতে বাধ্য করা
+GAME_DIR="$HOME/Games/Far-Cry-4"
+GAME_BIN="$GAME_DIR/bin"
+HEAL_SCRIPT="$GAME_DIR/auto_heal.py"
+
+# Validate game directory
+if [ ! -d "$GAME_BIN" ]; then
+    echo "[ERROR] Game directory not found: $GAME_BIN"
+    echo "        Please install Far Cry 4 to ~/Games/Far-Cry-4/"
+    exit 1
+fi
+
+cd "$GAME_BIN" || exit 1
+
+# 1. Force Wine to use DXVK (Vulkan) instead of slow WineD3D
 export WINEDLLOVERRIDES="d3d11,dxgi,d3d10core,d3d9=n,b"
-export WINEPREFIX="/home/$USER/.wine"
+export WINEPREFIX="$HOME/.wine"
 
-# ২. ব্লুটুথ হেডফোন ও পাইপওয়্যারে অডিও ডিলে / ভলিউম ওঠানামা ফিক্স
+# 2. Bluetooth & PipeWire audio latency fix
+#    Eliminates ~200ms Bluetooth audio delay and volume spikes
 export PULSE_LATENCY_MSEC=50
 export PIPEWIRE_LATENCY="512/48000"
 
-# ৩. AMD Radeon iGPU পারফরম্যান্স অপ্টিমাইজেশন (GPL Shader Pre-caching & Multithreading)
+# 3. AMD Radeon iGPU performance optimizations
+#    GPL: enables Graphics Pipeline Library for faster shader compilation
+#    mesa_glthread: offloads GL calls to a separate CPU thread
 export RADV_PERFTEST=gpl
 export mesa_glthread=true
 
-# ৪. ১-ট্যাপ অটো-হিল হেল্পার ব্যাকগ্রাউন্ড ডেমন হিসেবে চালু
-python3 /home/$USER/Games/Far-Cry-4/auto_heal.py &
-HEAL_PID=$!
+# 4. Launch 1-tap auto-heal helper as a background daemon
+if [ -f "$HEAL_SCRIPT" ]; then
+    python3 "$HEAL_SCRIPT" &
+    HEAL_PID=$!
+else
+    echo "[WARN] auto_heal.py not found, skipping heal macro."
+    HEAL_PID=""
+fi
 
-# গেম এক্সিট করলে ব্যাকগ্রাউন্ড হেল্পার বন্ধ করার ক্লিনআপ ট্র্যাপ
+# Cleanup: kill background heal helper when game exits
 cleanup() {
-    kill "$HEAL_PID" 2>/dev/null || true
+    if [ -n "$HEAL_PID" ]; then
+        kill "$HEAL_PID" 2>/dev/null || true
+    fi
 }
 trap cleanup EXIT INT TERM
 
-# ৫. GameMode দিয়ে গেম রান (প্রসেস প্রায়োরিটি ও সিপিইউ গভর্নেন্স বুস্ট)
+# 5. Run game via GameMode (CPU governor boost) if available
 if command -v gamemoderun >/dev/null 2>&1; then
     gamemoderun /usr/bin/wine64 ./FarCry4.exe "$@"
 else
@@ -182,21 +214,21 @@ else
 fi
 ```
 
-স্ক্রিপ্টটিকে এক্সিকিউটেবল পারমিশন দিন:
+Make the script executable:
 ```bash
-chmod +x /home/$USER/Games/Far-Cry-4/play-farcry4.sh
+chmod +x ~/Games/Far-Cry-4/play-farcry4.sh
 ```
 
 ---
 
-### ২. গ্রাফিক্স ও ট্রি-স্পাইক গ্লিচ ফিক্স (`GamerProfile.xml`)
-**লোকেশন:** `/home/$USER/Documents/My Games/Far Cry 4/AnkerGames/GamerProfile.xml`  
+### 2. Graphics Glitch & Tree-Spike Fix (`GamerProfile.xml`)
+**Location:** `$HOME/Documents/My Games/Far Cry 4/AnkerGames/GamerProfile.xml`  
 
-#### সমস্যা:
-AMD Radeon Integrated Graphics (Vega/Barcelo) এ লিনাক্সে DXVK দিয়ে গেমটি রান করলে গাছপালার ডাল ও পাতা স্ট্রেচ হয়ে স্ক্রিনজুড়ে অদ্ভুত লম্বা সূঁচালো পিক্সেল (Spikes) তৈরি হতো এবং পাতার চারপাশে কালো বক্স আসতো।
+#### The Problem:
+On AMD Radeon integrated graphics (Vega / Barcelo), running Far Cry 4 through DXVK caused foliage and tree branches to stretch into long, spiked polygon artifacts extending across the screen, along with rectangular black bounding boxes around leaves.
 
-#### সমাধান:
-`GamerProfile.xml` ফাইলের `<RenderProfile>` সেকশনে নিচের প্যারামিটারগুলো পরিবর্তন করা হয়েছে:
+#### The Fix:
+Modify the `<RenderProfile>` section in `GamerProfile.xml`:
 
 ```xml
 <RenderProfile 
@@ -221,43 +253,53 @@ AMD Radeon Integrated Graphics (Vega/Barcelo) এ লিনাক্সে DXVK 
 </RenderProfile>
 ```
 
-#### মূল ফিক্সগুলোর ব্যাখ্যা:
-- `AlphaToCoverage="0"`: পাতার চারপাশের অস্বস্তিকর কালো চারকোনা বক্স দূর করে।
-- `TreeTessellationLevel="0"`: গাছের ডালের পলিগন ব্রেকিং এবং স্ক্রিনজুড়ে স্পাইক ছড়িয়ে পড়া বন্ধ করে।
-- `<RealTreeProfile Quality="Low" />`: ভেজিটেশন রেন্ডারিং গ্লিচ সম্পূর্ণ রিমুভ করে।
-- `GPUMaxBufferedFrames="1"`: ইনপুট ল্যাগ এবং ফ্রেম পেসিং স্টাটারিং বন্ধ করে রেসপন্সিভনেস বাড়ায়।
+#### Key Adjustments Explained:
+- `AlphaToCoverage="0"`: Removes black box artifacts around leaves and transparent textures.
+- `TreeTessellationLevel="0"`: Disables geometry tessellation on vegetation, eliminating stretched polygon spikes.
+- `<RealTreeProfile Quality="Low" />`: Prevents vegetation rendering bugs on integrated AMD hardware.
+- `GPUMaxBufferedFrames="1"`: Minimizes input latency and reduces frame pacing stutter.
 
 ---
 
-### ৩. ১-ট্যাপ অটো-হিল ম্যাক্রো স্ক্রিপ্ট (`auto_heal.py`)
-**লোকেশন:** `/home/$USER/Games/Far-Cry-4/auto_heal.py`  
+### 3. 1-Tap Auto-Heal Keyboard Macro (`auto_heal.py`)
+**Location:** `$HOME/Games/Far-Cry-4/auto_heal.py`  
 
-#### সমস্যা:
-ফার ক্রাই ৪-এ হিল করতে `H` বা `Ctrl` কি-টি প্রায় ১.১ সেকেন্ড ধরে চেপে রেখে চাকা ভরাতে হয়, যা ফাইট চলাকালীন মুভমেন্ট নষ্ট করে।
+#### The Problem:
+Far Cry 4 requires holding the heal button (`H` or `Ctrl`) for ~1.1 seconds to fill the radial syringe wheel. Holding a key during intense gunfights interrupts player movement and evasive maneuvering.
 
-#### সমাধান:
-Linux কার্নেল ইনপুট সাবসিস্টেম (`evdev`) এবং ভার্চুয়াল ইনপুট ডিভাইস (`uinput`) ব্যবহার করে ব্যাকগ্রাউন্ড ম্যাক্রো তৈরি করা হয়েছে। কিবোর্ডে `H` বাটন একবার প্রেস করলেই এটি স্বয়ংক্রিয়ভাবে গেমের ভেতরে `Ctrl` কি-টি নিখুঁত ১.০৫ সেকেন্ড হোল্ড করে রেখে ছেড়ে দেয়।
+#### The Solution:
+Using Linux kernel input events (`evdev`) and a virtual input device (`uinput`), this script listens for a single quick tap on `H` and simulates holding `KEY_LEFTCTRL` for exactly 1.05 seconds asynchronously in a background thread.
 
 ```python
 #!/usr/bin/env python3
 """
-1-Tap Auto Heal Macro for Far Cry 4 via Linux evdev & uinput.
-Listens for a quick tap on 'H' and automatically triggers a 1.05s
-simulated hold of 'KEY_LEFTCTRL' without blocking user input.
+1-Tap Auto Heal Macro for Far Cry 4 — Linux evdev & uinput
+===========================================================
+Listens for a single tap on KEY_H and automatically holds
+LEFT_CTRL for HEAL_DURATION seconds via a virtual uinput
+device without requiring sudo (requires udev rule).
 """
 
 import time
 import threading
 import sys
-import os
+import logging
 import evdev
 from evdev import ecodes
 
-HEAL_DURATION = 1.05  # সেকেন্ড ধরে হিল কি হোল্ড করবে
+HEAL_DURATION = 1.05   # Seconds to hold the heal key
+LOG_LEVEL     = logging.WARNING
+
+logging.basicConfig(
+    format="[auto_heal] %(levelname)s: %(message)s",
+    level=LOG_LEVEL,
+)
+log = logging.getLogger(__name__)
+
 is_healing = False
 
-def do_heal(ui):
-    """ভার্চুয়াল কীবোর্ডের মাধ্যমে বাম Ctrl কি চেপে ধরে রেখে ছেড়ে দেয়"""
+def do_heal(ui: evdev.UInput) -> None:
+    """Simulate holding LEFT_CTRL for HEAL_DURATION seconds."""
     global is_healing
     try:
         ui.write(ecodes.EV_KEY, ecodes.KEY_LEFTCTRL, 1)  # Key Down
@@ -265,11 +307,13 @@ def do_heal(ui):
         time.sleep(HEAL_DURATION)
         ui.write(ecodes.EV_KEY, ecodes.KEY_LEFTCTRL, 0)  # Key Up
         ui.syn()
+    except Exception as exc:
+        log.error("Error during heal simulation: %s", exc)
     finally:
         is_healing = False
 
-def find_keyboards():
-    """সিস্টেমের সক্রিয় ফিজিক্যাল কীবোর্ড ডিভাইসগুলো স্বয়ংক্রিয়ভাবে শনাক্ত করে"""
+def find_keyboards() -> list:
+    """Auto-detect physical keyboard devices via evdev."""
     keyboards = []
     for path in evdev.list_devices():
         try:
@@ -277,35 +321,53 @@ def find_keyboards():
             caps = dev.capabilities()
             if ecodes.EV_KEY in caps:
                 keys = caps[ecodes.EV_KEY]
-                # সাধারণ কীবোর্ডে H এবং W কি অবশ্যই থাকবে
                 if ecodes.KEY_H in keys and ecodes.KEY_W in keys:
                     keyboards.append(dev)
+        except PermissionError:
+            log.debug("Permission denied for %s — verify udev rules.", path)
         except Exception:
             pass
     return keyboards
 
-def listen_device(dev, ui):
-    """কীবোর্ড থেকে 'H' কি প্রেস ইভেন্ট শোনে"""
+def listen_device(dev: evdev.InputDevice, ui: evdev.UInput) -> None:
+    """Listen for KEY_H tap events on a keyboard device."""
     global is_healing
     try:
         for event in dev.read_loop():
-            if event.type == ecodes.EV_KEY and event.code == ecodes.KEY_H:
-                if event.value == 1 and not is_healing:  # বাটন প্রেস
-                    is_healing = True
-                    t = threading.Thread(target=do_heal, args=(ui,), daemon=True)
-                    t.start()
-    except Exception:
+            if (
+                event.type == ecodes.EV_KEY
+                and event.code == ecodes.KEY_H
+                and event.value == 1  # Key Down
+                and not is_healing
+            ):
+                is_healing = True
+                t = threading.Thread(target=do_heal, args=(ui,), daemon=True)
+                t.start()
+    except OSError:
         pass
 
-def main():
+def main() -> None:
     keyboards = find_keyboards()
     if not keyboards:
+        log.error(
+            "No keyboard found. Ensure udev rule is installed:\n"
+            "  sudo cp configs/99-game-input.rules /etc/udev/rules.d/\n"
+            "  sudo udevadm control --reload-rules && sudo udevadm trigger"
+        )
         sys.exit(1)
 
     try:
-        ui = evdev.UInput({ecodes.EV_KEY: [ecodes.KEY_LEFTCTRL]})
-    except Exception as e:
-        print(f"Error initializing UInput: {e}")
+        ui = evdev.UInput({ecodes.EV_KEY: [ecodes.KEY_LEFTCTRL]}, name="auto-heal-macro")
+    except PermissionError:
+        log.error(
+            "Cannot open /dev/uinput (Permission denied).\n"
+            "Install udev rule:\n"
+            "  sudo cp configs/99-game-input.rules /etc/udev/rules.d/\n"
+            "  sudo udevadm control --reload-rules && sudo udevadm trigger"
+        )
+        sys.exit(1)
+    except Exception as exc:
+        log.error("Failed to create UInput device: %s", exc)
         sys.exit(1)
 
     threads = []
@@ -322,53 +384,49 @@ def main():
     finally:
         ui.close()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 ```
 
 ---
 
-### ৪. রুট ছাড়া ইনপুট পারমিশন রুল (`99-game-input.rules`)
-**লোকেশন:** `/etc/udev/rules.d/99-game-input.rules`  
-**কাজ:** সাধারণ ইউজার অ্যাকাউন্টকে কোনো `sudo` বা রুট পারমিশন ছাড়াই ভার্চুয়াল ইনপুট (`uinput`) এবং কীবোর্ড ইভেন্ট রিড করার সুযোগ দেয়।
+### 4. Non-Root Input Permission Rule (`99-game-input.rules`)
+**Location:** `/etc/udev/rules.d/99-game-input.rules`  
+**Purpose:** Grants the active desktop user access to `/dev/uinput` and `/dev/input/event*` nodes via `uaccess` without requiring root or `sudo` privileges.
 
 ```udev
 KERNEL=="uinput", SUBSYSTEM=="misc", TAG+="uaccess", OPTIONS+="static_node=uinput"
 KERNEL=="event*", SUBSYSTEM=="input", TAG+="uaccess"
 ```
 
-রুলটি অ্যাপ্লাই ও অ্যাক্টিভেট করার কমান্ড:
+Apply and reload rules immediately:
 ```bash
-sudo tee /etc/udev/rules.d/99-game-input.rules << 'EOF'
-KERNEL=="uinput", SUBSYSTEM=="misc", TAG+="uaccess", OPTIONS+="static_node=uinput"
-KERNEL=="event*", SUBSYSTEM=="input", TAG+="uaccess"
-EOF
-
+sudo cp configs/99-game-input.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
 ---
 
-### ৫. ডেক্সটপ এন্ট্রি ও ১-ক্লিক লঞ্চার (`FarCry4.desktop`)
-**লোকেশন:**  
-- ডেক্সটপ: `/home/$USER/Desktop/FarCry4.desktop`
-- সিস্টেম অ্যাপ ড্রয়ার: `/home/$USER/.local/share/applications/FarCry4.desktop`
+### 5. Desktop Entry & 1-Click Launcher (`FarCry4.desktop`)
+**Location:**  
+- Desktop: `~/Desktop/FarCry4.desktop`
+- App Drawer: `~/.local/share/applications/FarCry4.desktop`
 
 ```ini
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=Far Cry 4
-Comment=Play Far Cry 4 on Ubuntu Linux
-Exec=/home/dipu/Games/Far-Cry-4/play-farcry4.sh
-Path=/home/dipu/Games/Far-Cry-4/bin
-Icon=/home/dipu/Games/Far-Cry-4/bin/farcry4.png
+Comment=Play Far Cry 4 on Ubuntu Linux via Wine + DXVK
+Exec=/home/YOUR_USERNAME/Games/Far-Cry-4/play-farcry4.sh
+Path=/home/YOUR_USERNAME/Games/Far-Cry-4/bin
+Icon=/home/YOUR_USERNAME/Games/Far-Cry-4/bin/farcry4.png
 Terminal=false
 Categories=Game;
 StartupNotify=true
 ```
 
-ডেক্সটপে ডাবল-ক্লিক কাজ করার জন্য পারমিশন ও ট্রাস্ট সেট করুন:
+Enable double-click launching on Ubuntu desktop:
 ```bash
 chmod +x ~/Desktop/FarCry4.desktop
 gio set ~/Desktop/FarCry4.desktop metadata::trusted true 2>/dev/null || true
@@ -376,62 +434,65 @@ gio set ~/Desktop/FarCry4.desktop metadata::trusted true 2>/dev/null || true
 
 ---
 
-### ৬. ওয়াইন রেজিস্ট্রি অপ্টিমাইজেশন (Wine Key-Stuck & DLL Overrides)
-Wine এনভায়রনমেন্টে গেমের মধ্যে কিবোর্ড চাপলে অনেক সময় কি-স্টাক (Auto-run/Auto-walk) হয়ে যায় এবং ফোকাস লস্ট হয়। এটি বন্ধ করতে এবং DXVK এনফোর্স করতে এই কমান্ডগুলো রান করুন:
+### 6. Wine Registry Optimization (Key-Stuck & DLL Overrides)
+Wine sessions occasionally trigger key-stuck bugs (characters endlessly auto-running or strafing) when focus changes. Apply the following registry keys to resolve X11 focus and enforce native DXVK:
 
 ```bash
-# ১. DXVK DllOverrides নিশ্চিত করা
+# 1. Enforce native DXVK overrides in Wine registry
 wine reg add 'HKEY_CURRENT_USER\Software\Wine\DllOverrides' /v d3d11 /t REG_SZ /d 'native,builtin' /f
 wine reg add 'HKEY_CURRENT_USER\Software\Wine\DllOverrides' /v dxgi /t REG_SZ /d 'native,builtin' /f
 
-# ২. কি-স্টাক / অটো-রান বাগ ফিক্স (X11 Driver Focus Settings)
+# 2. Prevent key-stuck and input focus loss (X11 Driver)
 wine reg add 'HKEY_CURRENT_USER\Software\Wine\X11 Driver' /v UseTakeFocus /t REG_SZ /d 'N' /f
 wine reg add 'HKEY_CURRENT_USER\Software\Wine\X11 Driver' /v GrabPointer /t REG_SZ /d 'Y' /f
 ```
 
 ---
 
-### ৭. ব্লুটুথ ও পাইপওয়্যারে অডিও ল্যাটেন্সি ফিক্স (PipeWire Low Latency)
-Wine দিয়ে গেম খেললে ব্লুটুথ হেডফোনে (A2DP/SBC/AAC কোডেক) সাধারণত ২০০-৩০০ মিলি-সেকেন্ড অডিও ল্যাগ তৈরি হয় অথবা ভলিউম হঠাৎ কম-বেশি হয়।
+### 7. PipeWire Low-Latency Bluetooth Audio Tuning
+Wine with PulseAudio emulation often induces 200–300ms latency on Bluetooth headphones (A2DP/AAC/SBC) and random volume fluctuations.
 
-`play-farcry4.sh` স্ক্রিপ্টে নিচের এনভায়রনমেন্ট ভ্যারিয়েবলগুলো যোগ করে অডিও সম্পূর্ণ বাফারলেস ও ইনস্ট্যান্ট সিঙ্ক করা হয়েছে:
-- `PULSE_LATENCY_MSEC=50`: পালসঅডিও ইমুলেশন বাফার কমিয়ে ৫০ মিলি-সেকেন্ডে নামিয়ে আনে।
-- `PIPEWIRE_LATENCY="512/48000"`: পাইপওয়্যারের হার্ডওয়্যার বাফার সাইজ ৫১২ ফ্রেমে লক করে সাউন্ড ক্র্যাকল ও ডিলে বন্ধ করে।
+The following variables in `play-farcry4.sh` resolve this:
+- `PULSE_LATENCY_MSEC=50`: Locks the audio buffer latency to 50ms.
+- `PIPEWIRE_LATENCY="512/48000"`: Forces PipeWire hardware buffer quantum to 512 samples at 48kHz, preventing crackling while keeping audio synchronized with gameplay actions.
 
 ---
 
-## ⚡ Quick Start Guide (এক নজরে ফুল সেটআপ)
+## ⚡ Quick Start Guide
 
-আপনি যদি সম্পূর্ণ কনফিগারেশন নতুন পিসিতে সেটআপ করতে চান:
+To set up everything on a fresh machine in one single command:
 
 ```bash
-# ১. রিপোজিটরি ক্লোন করুন
+# 1. Clone the repository
 git clone https://github.com/rakibdipu/linux-gaming-guide.git
 cd linux-gaming-guide
 
-# ২. অটো-ইনস্টলার চালান (সব কিছু একসাথে সেটআপ হয়ে যাবে)
+# 2. Run the automated installer
 bash install.sh
 ```
 
-> **Note:** `install.sh` স্বয়ংক্রিয়ভাবে সব ডিপেন্ডেন্সি ইনস্টল, udev রুল, Wine রেজিস্ট্রি টুইক এবং আপনার ইউজারনেম দিয়ে ডেক্সটপ শর্টকাট তৈরি করে দেবে।
+> **Note:** `install.sh` automatically installs all system packages, deploys udev rules, applies Wine registry optimizations, and generates desktop launchers with your dynamic `$HOME` path.
 
 ---
 
-## ❓ সাধারণ সমস্যা ও সমাধান (Troubleshooting & FAQ)
+## ❓ Frequently Asked Questions (Troubleshooting & FAQ)
 
-### প্র: গেম অন করার পর ব্ল্যাক স্ক্রিন এসে বন্ধ হয়ে যায় কেন?
-> **উ:** `WINEDLLOVERRIDES` ঠিকমতো লোড না হলে এমন হয়। গেমের `bin/` ফোল্ডারে `d3d11.dll` এবং `dxgi.dll` ঠিকমতো কপি করা আছে কি না চেক করুন এবং `vulkaninfo` কমান্ড দিয়ে ভালকান ড্রাইভার ইনস্টল্ড আছে কি না নিশ্চিত করুন।
+### Q: The game opens to a black screen and closes immediately.
+> **Answer:** This typically indicates that `WINEDLLOVERRIDES` could not locate DXVK DLLs or Vulkan is not initialized. Verify that `d3d11.dll` and `dxgi.dll` are in `~/Games/Far-Cry-4/bin/` and test your Vulkan stack using `vulkaninfo`.
 
-### প্র: কিবোর্ডে ক্যারেক্টার নিজে নিজে সামনে হাঁটতে থাকে (Key Stuck)?
-> **উ:** এটি Wine এর X11 ফোকাস বাগ। রেজিস্ট্রি কি `UseTakeFocus=N` এবং `GrabPointer=Y` দিলে এই সমস্যা ১০০% সমাধান হয়ে যায় (সেকশন ৬ দেখুন)।
+### Q: My character keeps walking forward automatically (Key Stuck bug).
+> **Answer:** This is a known Wine X11 window focus bug. Setting `UseTakeFocus=N` and `GrabPointer=Y` in the Wine registry resolves it (see [Section 6](#6-wine-registry-optimization-key-stuck--dll-overrides)).
 
-### প্র: `auto_heal.py` রান করার সময় `PermissionError: /dev/uinput` দেখায় কেন?
-> **উ:** আপনার বর্তমান ইউজার uinput ডিভাইসে অ্যাক্সেস পাচ্ছে না। `/etc/udev/rules.d/99-game-input.rules` ফাইলটি তৈরি করে সিস্টেম একবার রিস্টার্ট দিন বা `sudo udevadm trigger` কমান্ড চালান।
+### Q: Running `auto_heal.py` gives `PermissionError: /dev/uinput`.
+> **Answer:** The current user lacks permission to access the input subsystem. Copy `configs/99-game-input.rules` to `/etc/udev/rules.d/` and reload udev using `sudo udevadm trigger` (or reboot).
+
+### Q: Can I run DirectX 12 games with this exact setup?
+> **Answer:** DXVK handles DirectX 9, 10, and 11. For DirectX 12 games (e.g., Cyberpunk 2077, Elden Ring), use **VKD3D-Proton** (included natively in Lutris or Heroic Games Launcher).
 
 ---
 
-## 📄 লাইসেন্স (License)
+## 📄 License
 
-This documentation and accompanying scripts are licensed under the [MIT License](LICENSE). Feel free to adapt and share!
+This documentation and accompanying scripts are licensed under the [MIT License](LICENSE). Contributions, issues, and forks are welcome!
 
 Happy Gaming on Linux! 🐧🎮
